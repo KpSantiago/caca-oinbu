@@ -6,15 +6,16 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NoArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import lombok.AllArgsConstructor;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 
 @AllArgsConstructor
@@ -24,6 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private IAuthService authService;
     private UserDetailsService userDetailsService;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return Arrays.stream(ApiConfig.SWAGGER_PATHS).anyMatch(p -> pathMatcher.match(p, path));
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -45,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private Optional<String> getTokenFromAuthentication(HttpServletRequest request) {
         String header = request.getHeader(AUTHORIZATION);
 
-        if (header.isBlank() || !header.startsWith(PREFIX)) {
+        if (header == null ||header.isBlank() || !header.startsWith(PREFIX)) {
             return Optional.empty();
         }
 
