@@ -22,6 +22,7 @@ import java.util.Optional;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION = "Authorization";
     private static final String PREFIX = "Bearer";
+    private static final String[] whiteList = ApiConfig.WHITE_LIST;
 
     private IAuthService authService;
     private UserDetailsService userDetailsService;
@@ -30,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
-        return Arrays.stream(ApiConfig.SWAGGER_PATHS).anyMatch(p -> pathMatcher.match(p, path));
+        return Arrays.stream(whiteList).anyMatch(p -> pathMatcher.match(p, path));
     }
 
     @Override
