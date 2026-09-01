@@ -12,6 +12,6 @@ public interface BusRepository extends JpaRepository<Bus, String> {
     @Query("""
         SELECT b FROM Bus b INNER JOIN b.driver WHERE :param = :value
     """)
-    Optional<Bus> findByParam(@Param(":param") BusSort param, @Param(":value") String value);
+    Optional<Bus> findByParam(@Param("param") BusSort param, @Param("value") String value);
     Optional<Bus> findByPlateIgnoreCase(String plate);
 }
