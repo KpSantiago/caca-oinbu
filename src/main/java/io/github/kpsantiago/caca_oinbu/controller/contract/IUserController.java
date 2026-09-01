@@ -6,6 +6,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 
 public interface IUserController {
-    @Operation(summary = "Cria um novo usuárip")
+    @Operation(summary = "Cria um novo usuário")
     ResponseEntity<UserResponseDto> create(UserRequestDto request);
 }
