@@ -57,8 +57,11 @@ public class WebSecurityConfig {
                                     sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)))
             .authenticationManager(authenticationManager())
             .exceptionHandling(handler ->
-                        handler.authenticationEntryPoint((request, response, authException) ->
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN)
+                        handler.authenticationEntryPoint((request, response, authException) -> {
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    response.getWriter().write("{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Invalid Token\" }");
+                                    response.setContentType("Application/json; charset=UTF-8");
+                                }
                         ));
 
 
