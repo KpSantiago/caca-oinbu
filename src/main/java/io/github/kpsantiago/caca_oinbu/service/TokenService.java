@@ -38,13 +38,14 @@ public class TokenService implements ITokenService {
         String scope = authentication.getAuthorities().stream()
                 .filter(a -> a.getAuthority() != null && !a.getAuthority().startsWith("FACTOR_"))
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(""));
+                   .collect(Collectors.joining(""));
 
         User user = (User) authentication.getPrincipal();
         JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("http://localhost:8080")
                 .subject(user.getEmail())
                 .issuedAt(now)
-                .claim("role", scope)
+                .claim("scope", scope)
                 .expiresAt(now.plus(expiration, ChronoUnit.MINUTES))
                 .build();
 
