@@ -20,6 +20,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -78,8 +79,8 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws BadRequestException {
+    public UserDetails loadUserByUsername(String username) {
         return repository.findByEmailIgnoreCase(username)
-                .orElseThrow(() -> new BadRequestException("Usuário ou senha inválidos"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário ou senha inválidos"));
     }
 }
