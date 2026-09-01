@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,9 +23,20 @@ public class Bus {
     @Column(nullable = false, unique = true)
     private String plate;
 
-    @OneToOne(mappedBy = "bus")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id", nullable = false)
     private User driver;
 
     @OneToMany(mappedBy = "bus")
-    private List<RouteSchedule> routeSchedules;
+    private List<RouteSchedule> routeSchedules = new ArrayList<>();
+
+    @PrePersist
+    void PrePersist() {
+        plate = plate.toUpperCase();
+    }
+
+    @PreUpdate
+    void PreUpdate() {
+        plate = plate.toUpperCase();
+    }
 }

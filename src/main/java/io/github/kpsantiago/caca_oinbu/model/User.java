@@ -33,6 +33,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToOne(mappedBy = "driver")
+    private Bus bus;
+
     @PrePersist
     public void prePersist() {
        this.email = this.email.toLowerCase();
