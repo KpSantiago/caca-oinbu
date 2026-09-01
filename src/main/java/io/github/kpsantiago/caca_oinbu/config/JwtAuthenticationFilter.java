@@ -47,14 +47,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         authenticationToken.setDetails(userDetails);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
         filterChain.doFilter(request, response);
     }
 
     private Optional<String> getTokenFromAuthentication(HttpServletRequest request) {
         String header = request.getHeader(AUTHORIZATION);
 
-        if (header == null ||header.isBlank() || !header.startsWith(PREFIX)) {
+        if (header == null || header.isBlank() || !header.startsWith(PREFIX)) {
             return Optional.empty();
         }
 
