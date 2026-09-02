@@ -1,0 +1,17 @@
+application:
+  security:
+    jwt:
+      secret-key: TEST
+      expiration: 30
+
+spring:
+  application:
+    name: caca-oinbu
+
+  datasource:
+    url: jdbc:h2:mem:db
+    username: sa
+    password: sa
+
+  flyway:
+    enabled: false
