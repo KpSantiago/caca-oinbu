@@ -13,6 +13,7 @@ import io.github.kpsantiago.caca_oinbu.repository.UserRepository;
 import io.github.kpsantiago.caca_oinbu.service.contract.IAuthService;
 import io.github.kpsantiago.caca_oinbu.service.contract.ITokenService;
 import io.github.kpsantiago.caca_oinbu.service.contract.IUserService;
+import io.github.kpsantiago.caca_oinbu.validation.UserValidation;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,8 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
 
     private final UserMapper mapper;
 
+    private final UserValidation validation;
+
     private final PasswordEncoder encoder;
 
     private final AuthenticationConfiguration authenticationConfiguration;
@@ -41,9 +44,7 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
     @Override
     @Transactional
     public UserResponseDto create(UserRequestDto request) {
-        var userAlreadyExists = repository.findByEmailIgnoreCase(request.getEmail()).isPresent();
-        if(userAlreadyExists)
-            throw new ConflictException("Um usuário com o email " + request.getEmail() + " já existe");
+        validation.validateUserExists(repository.findByEmailIgnoreCase(request.getEmail()), false);
 
         request.setPassword(encoder.encode(request.getPassword()));
 
@@ -74,8 +75,9 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
 
     @Override
     public UserResponseDto profile(String userEmail) {
-        return mapper.toDto(repository.findByEmailIgnoreCase(userEmail)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado")));
+        var user = validation.validateUserExists(repository.findByEmailIgnoreCase(userEmail), true);
+
+        return mapper.toDto(user);
     }
 
     @Override
