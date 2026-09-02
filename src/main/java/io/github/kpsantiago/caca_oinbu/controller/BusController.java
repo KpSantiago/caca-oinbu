@@ -32,7 +32,7 @@ public class BusController implements IBusController {
     }
 
     @Override
-    @GetMapping
+    @GetMapping("/search")
     @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN')")
     public ResponseEntity<BusResponseDto> getBusByParam(@RequestParam BusSort param, @RequestParam String value) {
         User requester = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
