@@ -23,5 +23,8 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run tests with Maven
+      - name: Compile Code
+        run: mvn compile
+
+      - name: Run Unit Tests
         run: mvn test
