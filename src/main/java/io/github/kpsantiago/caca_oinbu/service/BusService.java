@@ -30,7 +30,10 @@ public class BusService implements IBusService {
     private final UserValidation userValidation;
 
     @Override
-    public BusResponseDto createBus(BusRequestDto request) {
+    public BusResponseDto createBus(BusRequestDto request, String requesterEmail) {
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        userValidation.validateUserIs(admin, ADMIN);
+
         validation.validateBusExists(repository.findByPlateIgnoreCase(request.getPlate()), false);
 
         var driver = userValidation.validateUserExists(userRepository.findById(request.getDriverId()), true);
@@ -43,19 +46,28 @@ public class BusService implements IBusService {
     }
 
     @Override
-    public BusResponseDto getBusByParam(BusSort param, String value) {
+    public BusResponseDto getBusByParam(BusSort param, String value, String requesterEmail) {
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        userValidation.validateUserIs(admin, ADMIN);
+
         var bus = validation.validateBusExists(repository.findByParam(param.name(), value), true);
 
         return mapper.toDto(bus);
     }
 
     @Override
-    public Page<BusResponseDto> getAllBuses(Pageable pageable) {
+    public Page<BusResponseDto> getAllBuses(Pageable pageable, String requesterEmail) {
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        userValidation.validateUserIs(admin, ADMIN);
+
         return repository.findAll(pageable).map(mapper::toDto);
     }
 
     @Override
-    public BusResponseDto updateBus(BusRequestDto request, String id) {
+    public BusResponseDto updateBus(BusRequestDto request, String id, String requesterEmail) {
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        userValidation.validateUserIs(admin, ADMIN);
+
         return null;
     }
 }

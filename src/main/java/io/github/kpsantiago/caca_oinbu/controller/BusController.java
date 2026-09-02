@@ -5,6 +5,7 @@ import io.github.kpsantiago.caca_oinbu.controller.contract.IBusController;
 import io.github.kpsantiago.caca_oinbu.dto.request.BusRequestDto;
 import io.github.kpsantiago.caca_oinbu.dto.response.BusResponseDto;
 import io.github.kpsantiago.caca_oinbu.enums.BusSort;
+import io.github.kpsantiago.caca_oinbu.model.User;
 import io.github.kpsantiago.caca_oinbu.service.contract.IBusService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,14 +27,16 @@ public class BusController implements IBusController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusResponseDto> create(@RequestBody BusRequestDto request) {
-        return ResponseEntity.ok(service.createBus(request));
+        User requester = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(service.createBus(request, requester.getEmail()));
     }
 
     @Override
     @GetMapping
     @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN')")
     public ResponseEntity<BusResponseDto> getBusByParam(@RequestParam BusSort param, @RequestParam String value) {
-        return ResponseEntity.ok(service.getBusByParam(param, value));
+        User requester = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(service.getBusByParam(param, value, requester.getEmail()));
     }
 
     @Override
@@ -44,15 +48,17 @@ public class BusController implements IBusController {
             @RequestParam(defaultValue = "ID") BusSort sort,
             @RequestParam(defaultValue = "ASC") Sort.Direction direction
     ) {
+        User requester = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort.name()));
 
-        return ResponseEntity.ok(service.getAllBuses(pageable));
+        return ResponseEntity.ok(service.getAllBuses(pageable, requester.getEmail()));
     }
 
     @Override
     @PutMapping
     @PreAuthorize("hasRole('DRIVER', 'ADMIN')")
     public ResponseEntity<BusResponseDto> updateBus(@RequestBody BusRequestDto request, @PathVariable String id) {
-        return ResponseEntity.ok(service.updateBus(request, id));
+        User requester = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(service.updateBus(request, id, requester.getEmail()));
     }
 }

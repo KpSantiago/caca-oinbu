@@ -7,8 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface IBusService {
-    BusResponseDto createBus(BusRequestDto request);
-    BusResponseDto getBusByParam(BusSort param, String value);
-    Page<BusResponseDto> getAllBuses(Pageable pageable);
-    BusResponseDto updateBus(BusRequestDto request, String id);
+    BusResponseDto createBus(BusRequestDto request, String requesterEmail);
+    BusResponseDto getBusByParam(BusSort param, String value, String requesterEmail);
+    Page<BusResponseDto> getAllBuses(Pageable pageable, String requesterEmail);
+    BusResponseDto updateBus(BusRequestDto request, String id, String requesterEmail);
 }
