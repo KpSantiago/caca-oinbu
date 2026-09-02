@@ -20,8 +20,8 @@ public class UserValidation {
         return user.orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    public void validateUserIs(User use, Role role) {
-        if (!use.getRole().equals(role)) {
+    public void validateUserIs(User user, Role role) {
+        if (!user.getRole().equals(role)) {
             throw new ForbiddenException("User must be " + role);
         }
     }
