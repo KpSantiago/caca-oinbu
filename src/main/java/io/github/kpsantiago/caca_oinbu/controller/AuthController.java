@@ -25,7 +25,7 @@ public class AuthController implements IAuthController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasAnyAuthority('DRIVER', 'ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN', 'USER')")
     public ResponseEntity<UserResponseDto> profile() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 

@@ -1,6 +1,5 @@
 package io.github.kpsantiago.caca_oinbu.repository;
 
-import io.github.kpsantiago.caca_oinbu.enums.BusSort;
 import io.github.kpsantiago.caca_oinbu.model.Bus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +11,6 @@ public interface BusRepository extends JpaRepository<Bus, String> {
     @Query("""
         SELECT b FROM Bus b INNER JOIN b.driver WHERE :param = :value
     """)
-    Optional<Bus> findByParam(@Param("param") BusSort param, @Param("value") String value);
+    Optional<Bus> findByParam(@Param("param") String param, @Param("value") String value);
     Optional<Bus> findByPlateIgnoreCase(String plate);
 }

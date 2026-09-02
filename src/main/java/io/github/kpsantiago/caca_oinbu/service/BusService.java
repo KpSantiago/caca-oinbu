@@ -10,6 +10,8 @@ import io.github.kpsantiago.caca_oinbu.service.contract.IBusService;
 import io.github.kpsantiago.caca_oinbu.validation.BusValidation;
 import io.github.kpsantiago.caca_oinbu.validation.UserValidation;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,14 +44,14 @@ public class BusService implements IBusService {
 
     @Override
     public BusResponseDto getBusByParam(BusSort param, String value) {
-        var bus = validation.validateBusExists(repository.findByParam(param, value), true);
+        var bus = validation.validateBusExists(repository.findByParam(param.name(), value), true);
 
         return mapper.toDto(bus);
     }
 
     @Override
-    public List<BusResponseDto> getAllBuses() {
-        return List.of();
+    public Page<BusResponseDto> getAllBuses(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toDto);
     }
 
     @Override

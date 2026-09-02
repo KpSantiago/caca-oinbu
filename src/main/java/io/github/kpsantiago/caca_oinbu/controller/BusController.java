@@ -7,6 +7,10 @@ import io.github.kpsantiago.caca_oinbu.dto.response.BusResponseDto;
 import io.github.kpsantiago.caca_oinbu.enums.BusSort;
 import io.github.kpsantiago.caca_oinbu.service.contract.IBusService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,15 +23,36 @@ public class BusController implements IBusController {
 
     @Override
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusResponseDto> create(@RequestBody BusRequestDto request) {
         return ResponseEntity.ok(service.createBus(request));
     }
 
     @Override
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('DRIVER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN')")
     public ResponseEntity<BusResponseDto> getBusByParam(@RequestParam BusSort param, @RequestParam String value) {
         return ResponseEntity.ok(service.getBusByParam(param, value));
+    }
+
+    @Override
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<Page<BusResponseDto>> getAllBuses(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "ID") BusSort sort,
+            @RequestParam(defaultValue = "ASC") Sort.Direction direction
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort.name()));
+
+        return ResponseEntity.ok(service.getAllBuses(pageable));
+    }
+
+    @Override
+    @PutMapping
+    @PreAuthorize("hasRole('DRIVER', 'ADMIN')")
+    public ResponseEntity<BusResponseDto> updateBus(@RequestBody BusRequestDto request, @PathVariable String id) {
+        return ResponseEntity.ok(service.updateBus(request, id));
     }
 }
