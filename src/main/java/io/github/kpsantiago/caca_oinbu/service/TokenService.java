@@ -5,8 +5,8 @@ import io.github.kpsantiago.caca_oinbu.enums.Role;
 import io.github.kpsantiago.caca_oinbu.exception.BadJwtException;
 import io.github.kpsantiago.caca_oinbu.model.User;
 import io.github.kpsantiago.caca_oinbu.service.contract.ITokenService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,18 +19,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class TokenService implements ITokenService {
 
     @Value("${application.security.jwt.expiration}")
+    @Setter
     private Integer expiration;
 
     private final JwtEncoder encoder;
     private final JwtDecoder decoder;
-
-    public TokenService(JwtEncoder encoder, JwtDecoder decoder) {
-        this.encoder = encoder;
-        this.decoder = decoder;
-    }
 
     @Override
     public TokenResponse generateToken(Authentication authentication) {
