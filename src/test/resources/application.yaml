@@ -8,10 +8,21 @@ spring:
   application:
     name: caca-oinbu
 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
   datasource:
     url: jdbc:h2:mem:db
     username: sa
     password: sa
+    driverClassName: org.h2.Driver
 
   flyway:
     enabled: false
+    default-schema: public
+    create-schemas: true
