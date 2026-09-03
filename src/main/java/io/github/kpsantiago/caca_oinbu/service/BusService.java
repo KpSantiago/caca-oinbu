@@ -31,12 +31,12 @@ public class BusService implements IBusService {
 
     @Override
     public BusResponseDto createBus(BusRequestDto request, String requesterEmail) {
-        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail));
         userValidation.validateUserIs(admin, ADMIN);
 
-        validation.validateBusExists(repository.findByPlateIgnoreCase(request.getPlate()), false);
+        validation.validateBusDoesNotExist(repository.findByPlateIgnoreCase(request.getPlate()));
 
-        var driver = userValidation.validateUserExists(userRepository.findById(request.getDriverId()), true);
+        var driver = userValidation.validateUserExists(userRepository.findById(request.getDriverId()));
         userValidation.validateUserIs(driver, DRIVER);
 
         var bus = mapper.toEntity(request);
@@ -47,17 +47,17 @@ public class BusService implements IBusService {
 
     @Override
     public BusResponseDto getBusByParam(BusSort param, String value, String requesterEmail) {
-        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail));
         userValidation.validateUserIs(admin, ADMIN);
 
-        var bus = validation.validateBusExists(repository.findByParam(param.name(), value), true);
+        var bus = validation.validateBusExists(repository.findByParam(param.name(), value));
 
         return mapper.toDto(bus);
     }
 
     @Override
     public Page<BusResponseDto> getAllBuses(Pageable pageable, String requesterEmail) {
-        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail));
         userValidation.validateUserIs(admin, ADMIN);
 
         return repository.findAll(pageable).map(mapper::toDto);
@@ -65,7 +65,7 @@ public class BusService implements IBusService {
 
     @Override
     public BusResponseDto updateBus(BusRequestDto request, String id, String requesterEmail) {
-        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail), true);
+        var admin = userValidation.validateUserExists(userRepository.findByEmailIgnoreCase(requesterEmail));
         userValidation.validateUserIs(admin, ADMIN);
 
         return null;

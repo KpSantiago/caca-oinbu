@@ -10,11 +10,13 @@ import java.util.Optional;
 @Component
 public class BusValidation {
 
-    public Bus validateBusExists(Optional<Bus> bus, boolean shouldExists) {
-        if (!shouldExists && bus.isPresent()) {
-            throw new ConflictException("Bus is not authorized");
-        }
-
+    public Bus validateBusExists(Optional<Bus> bus) {
         return bus.orElseThrow(() -> new NotFoundException("Bus not found"));
+    }
+
+    public void validateBusDoesNotExist(Optional<Bus> bus) {
+        bus.ifPresent(b -> {
+            throw new ConflictException("Bus already exists");
+        });
     }
 }

@@ -44,7 +44,7 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
     @Override
     @Transactional
     public UserResponseDto create(UserRequestDto request) {
-        validation.validateUserExists(repository.findByEmailIgnoreCase(request.getEmail()), false);
+        validation.validateUserDoesNotExist(repository.findByEmailIgnoreCase(request.getEmail()));
 
         request.setPassword(encoder.encode(request.getPassword()));
 
@@ -75,7 +75,7 @@ public class UserService implements IUserService, IAuthService, UserDetailsServi
 
     @Override
     public UserResponseDto profile(String userEmail) {
-        var user = validation.validateUserExists(repository.findByEmailIgnoreCase(userEmail), true);
+        var user = validation.validateUserExists(repository.findByEmailIgnoreCase(userEmail));
 
         return mapper.toDto(user);
     }

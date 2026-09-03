@@ -12,12 +12,14 @@ import java.util.Optional;
 @Component
 public class UserValidation {
 
-    public User validateUserExists(Optional<User> user, boolean shouldExists) {
-        if (!shouldExists && user.isPresent()) {
-            throw new ConflictException("User already exists");
-        }
-
+    public User validateUserExists(Optional<User> user) {
         return user.orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    public void validateUserDoesNotExist(Optional<User> user) {
+        user.ifPresent(u -> {
+            throw new ConflictException("User already exists");
+        });
     }
 
     public void validateUserIs(User user, Role role) {
