@@ -3,6 +3,7 @@ package io.github.kpsantiago.caca_oinbu.service;
 import io.github.kpsantiago.caca_oinbu.dto.request.BusRequestDto;
 import io.github.kpsantiago.caca_oinbu.dto.response.BusResponseDto;
 import io.github.kpsantiago.caca_oinbu.enums.Role;
+import io.github.kpsantiago.caca_oinbu.exception.ConflictException;
 import io.github.kpsantiago.caca_oinbu.exception.ForbiddenException;
 import io.github.kpsantiago.caca_oinbu.exception.NotFoundException;
 import io.github.kpsantiago.caca_oinbu.mapper.BusMapper;
@@ -76,15 +77,14 @@ class BusServiceTest {
         responseDto.setPlate("ABC-123");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByPlateIgnoreCase("ABC-123")).thenReturn(Optional.empty());
-        when(validation.validateBusExists(Optional.empty(), false))
-                .thenReturn(bus);
+        doNothing().when(validation).validateBusDoesNotExist(Optional.empty());
 
         when(userRepository.findById("1")).thenReturn(Optional.of(driver));
-        when(userValidation.validateUserExists(Optional.of(driver), true))
+        when(userValidation.validateUserExists(Optional.of(driver)))
                 .thenReturn(driver);
         doNothing().when(userValidation).validateUserIs(driver, Role.DRIVER);
 
@@ -100,14 +100,14 @@ class BusServiceTest {
         assertEquals("ABC-123", result.getPlate());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
 
         verify(repository).findByPlateIgnoreCase("ABC-123");
-        verify(validation).validateBusExists(Optional.empty(), false);
+        verify(validation).validateBusDoesNotExist(Optional.empty());
 
         verify(userRepository).findById("1");
-        verify(userValidation).validateUserExists(Optional.of(driver), true);
+        verify(userValidation).validateUserExists(Optional.of(driver));
         verify(userValidation).validateUserIs(driver, Role.DRIVER);
 
         verify(mapper).toEntity(request);
@@ -125,12 +125,12 @@ class BusServiceTest {
         var exception = new NotFoundException("not found");
 
         when(userRepository.findByEmailIgnoreCase("nonexistent@email.com")).thenReturn(Optional.empty());
-        when(userValidation.validateUserExists(Optional.empty(), true)).thenThrow(exception);
+        when(userValidation.validateUserExists(Optional.empty())).thenThrow(exception);
 
         assertThrows(NotFoundException.class, () -> service.createBus(request, "nonexistent@email.com"), exception.getMessage());
 
         verify(userRepository).findByEmailIgnoreCase("nonexistent@email.com");
-        verify(userValidation).validateUserExists(Optional.empty(), true);
+        verify(userValidation).validateUserExists(Optional.empty());
         verifyNoMoreInteractions(userValidation, repository, mapper);
     }
 
@@ -146,13 +146,13 @@ class BusServiceTest {
         driver.setRole(Role.DRIVER);
 
         when(userRepository.findByEmailIgnoreCase("driver@email.com")).thenReturn(Optional.of(driver));
-        when(userValidation.validateUserExists(Optional.of(driver), true)).thenReturn(driver);
+        when(userValidation.validateUserExists(Optional.of(driver))).thenReturn(driver);
         doThrow(new ForbiddenException("User is not admin")).when(userValidation).validateUserIs(driver, Role.ADMIN);
 
         assertThrows(ForbiddenException.class, () -> service.createBus(request, "driver@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("driver@email.com");
-        verify(userValidation).validateUserExists(Optional.of(driver), true);
+        verify(userValidation).validateUserExists(Optional.of(driver));
         verify(userValidation).validateUserIs(driver, Role.ADMIN);
         verifyNoMoreInteractions(repository, mapper);
     }
@@ -174,19 +174,19 @@ class BusServiceTest {
         existingBus.setPlate("ABC-123");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByPlateIgnoreCase("ABC-123")).thenReturn(Optional.of(existingBus));
-        doThrow(new ForbiddenException("Bus is not authorized")).when(validation).validateBusExists(Optional.of(existingBus), false);
+        doThrow(new ConflictException("Bus already exists")).when(validation).validateBusDoesNotExist(Optional.of(existingBus));
 
-        assertThrows(ForbiddenException.class, () -> service.createBus(request, "test@email.com"));
+        assertThrows(ConflictException.class, () -> service.createBus(request, "test@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByPlateIgnoreCase("ABC-123");
-        verify(validation).validateBusExists(Optional.of(existingBus), false);
+        verify(validation).validateBusDoesNotExist(Optional.of(existingBus));
         verifyNoMoreInteractions(userRepository, mapper);
     }
 
@@ -210,24 +210,24 @@ class BusServiceTest {
         var exception = new NotFoundException("not found");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByPlateIgnoreCase("ABC-123")).thenReturn(Optional.empty());
-        when(validation.validateBusExists(Optional.empty(), false)).thenReturn(bus);
+        doNothing().when(validation).validateBusDoesNotExist(Optional.empty());
 
         when(userRepository.findById("nonexistent-driver")).thenReturn(Optional.empty());
-        when(userValidation.validateUserExists(Optional.empty(), true)).thenThrow(exception);
+        when(userValidation.validateUserExists(Optional.empty())).thenThrow(exception);
 
         assertThrows(NotFoundException.class, () -> service.createBus(request, "test@email.com"), exception.getMessage());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByPlateIgnoreCase("ABC-123");
-        verify(validation).validateBusExists(Optional.empty(), false);
+        verify(validation).validateBusDoesNotExist(Optional.empty());
         verify(userRepository).findById("nonexistent-driver");
-        verify(userValidation).validateUserExists(Optional.empty(), true);
+        verify(userValidation).validateUserExists(Optional.empty());
         verifyNoMoreInteractions(mapper);
     }
 
@@ -253,25 +253,25 @@ class BusServiceTest {
         bus.setPlate("ABC-123");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByPlateIgnoreCase("ABC-123")).thenReturn(Optional.empty());
-        when(validation.validateBusExists(Optional.empty(), false)).thenReturn(bus);
+        doNothing().when(validation).validateBusDoesNotExist(Optional.empty());
 
         when(userRepository.findById("1")).thenReturn(Optional.of(passenger));
-        when(userValidation.validateUserExists(Optional.of(passenger), true)).thenReturn(passenger);
+        when(userValidation.validateUserExists(Optional.of(passenger))).thenReturn(passenger);
         doThrow(new ForbiddenException("User is not driver")).when(userValidation).validateUserIs(passenger, Role.DRIVER);
 
         assertThrows(ForbiddenException.class, () -> service.createBus(request, "test@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByPlateIgnoreCase("ABC-123");
-        verify(validation).validateBusExists(Optional.empty(), false);
+        verify(validation).validateBusDoesNotExist(Optional.empty());
         verify(userRepository).findById("1");
-        verify(userValidation).validateUserExists(Optional.of(passenger), true);
+        verify(userValidation).validateUserExists(Optional.of(passenger));
         verify(userValidation).validateUserIs(passenger, Role.DRIVER);
         verifyNoMoreInteractions(mapper);
     }
@@ -299,11 +299,11 @@ class BusServiceTest {
         responseDto.setPlate("ABC-123");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByParam("ID", "bus-1")).thenReturn(Optional.of(bus));
-        when(validation.validateBusExists(Optional.of(bus), true)).thenReturn(bus);
+        when(validation.validateBusExists(Optional.of(bus))).thenReturn(bus);
         when(mapper.toDto(bus)).thenReturn(responseDto);
 
         var result = service.getBusByParam(BusSort.ID, "bus-1", "test@email.com");
@@ -314,10 +314,10 @@ class BusServiceTest {
         assertEquals("ABC-123", result.getPlate());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByParam("ID", "bus-1");
-        verify(validation).validateBusExists(Optional.of(bus), true);
+        verify(validation).validateBusExists(Optional.of(bus));
         verify(mapper).toDto(bus);
     }
 
@@ -337,11 +337,11 @@ class BusServiceTest {
         responseDto.setName("Bus 1");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByParam("NAME", "Bus 1")).thenReturn(Optional.of(bus));
-        when(validation.validateBusExists(Optional.of(bus), true)).thenReturn(bus);
+        when(validation.validateBusExists(Optional.of(bus))).thenReturn(bus);
         when(mapper.toDto(bus)).thenReturn(responseDto);
 
         var result = service.getBusByParam(BusSort.NAME, "Bus 1", "test@email.com");
@@ -351,10 +351,10 @@ class BusServiceTest {
         assertEquals("Bus 1", result.getName());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByParam("NAME", "Bus 1");
-        verify(validation).validateBusExists(Optional.of(bus), true);
+        verify(validation).validateBusExists(Optional.of(bus));
         verify(mapper).toDto(bus);
     }
 
@@ -374,11 +374,11 @@ class BusServiceTest {
         responseDto.setPlate("ABC-123");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByParam("PLATE", "ABC-123")).thenReturn(Optional.of(bus));
-        when(validation.validateBusExists(Optional.of(bus), true)).thenReturn(bus);
+        when(validation.validateBusExists(Optional.of(bus))).thenReturn(bus);
         when(mapper.toDto(bus)).thenReturn(responseDto);
 
         var result = service.getBusByParam(BusSort.PLATE, "ABC-123", "test@email.com");
@@ -388,10 +388,10 @@ class BusServiceTest {
         assertEquals("ABC-123", result.getPlate());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByParam("PLATE", "ABC-123");
-        verify(validation).validateBusExists(Optional.of(bus), true);
+        verify(validation).validateBusExists(Optional.of(bus));
         verify(mapper).toDto(bus);
     }
 
@@ -409,11 +409,11 @@ class BusServiceTest {
         responseDto.setId("bus-1");
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByParam("DRIVER", "John Doe")).thenReturn(Optional.of(bus));
-        when(validation.validateBusExists(Optional.of(bus), true)).thenReturn(bus);
+        when(validation.validateBusExists(Optional.of(bus))).thenReturn(bus);
         when(mapper.toDto(bus)).thenReturn(responseDto);
 
         var result = service.getBusByParam(BusSort.DRIVER, "John Doe", "test@email.com");
@@ -422,10 +422,10 @@ class BusServiceTest {
         assertEquals("bus-1", result.getId());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByParam("DRIVER", "John Doe");
-        verify(validation).validateBusExists(Optional.of(bus), true);
+        verify(validation).validateBusExists(Optional.of(bus));
         verify(mapper).toDto(bus);
     }
 
@@ -434,12 +434,12 @@ class BusServiceTest {
         var exception = new NotFoundException("not found");
 
         when(userRepository.findByEmailIgnoreCase("nonexistent@email.com")).thenReturn(Optional.empty());
-        when(userValidation.validateUserExists(Optional.empty(), true)).thenThrow(exception);
+        when(userValidation.validateUserExists(Optional.empty())).thenThrow(exception);
 
         assertThrows(NotFoundException.class, () -> service.getBusByParam(BusSort.ID, "bus-1", "nonexistent@email.com"), exception.getMessage());
 
         verify(userRepository).findByEmailIgnoreCase("nonexistent@email.com");
-        verify(userValidation).validateUserExists(Optional.empty(), true);
+        verify(userValidation).validateUserExists(Optional.empty());
         verifyNoMoreInteractions(userValidation, repository, mapper);
     }
 
@@ -450,13 +450,13 @@ class BusServiceTest {
         driver.setRole(Role.DRIVER);
 
         when(userRepository.findByEmailIgnoreCase("driver@email.com")).thenReturn(Optional.of(driver));
-        when(userValidation.validateUserExists(Optional.of(driver), true)).thenReturn(driver);
+        when(userValidation.validateUserExists(Optional.of(driver))).thenReturn(driver);
         doThrow(new ForbiddenException("User is not admin")).when(userValidation).validateUserIs(driver, Role.ADMIN);
 
         assertThrows(ForbiddenException.class, () -> service.getBusByParam(BusSort.ID, "bus-1", "driver@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("driver@email.com");
-        verify(userValidation).validateUserExists(Optional.of(driver), true);
+        verify(userValidation).validateUserExists(Optional.of(driver));
         verify(userValidation).validateUserIs(driver, Role.ADMIN);
         verifyNoMoreInteractions(repository, mapper);
     }
@@ -469,19 +469,19 @@ class BusServiceTest {
         admin.setRole(Role.ADMIN);
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findByParam("ID", "nonexistent-bus")).thenReturn(Optional.empty());
-        doThrow(new ForbiddenException("Bus not found")).when(validation).validateBusExists(Optional.empty(), true);
+        doThrow(new ForbiddenException("Bus not found")).when(validation).validateBusExists(Optional.empty());
 
         assertThrows(ForbiddenException.class, () -> service.getBusByParam(BusSort.ID, "nonexistent-bus", "test@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findByParam("ID", "nonexistent-bus");
-        verify(validation).validateBusExists(Optional.empty(), true);
+        verify(validation).validateBusExists(Optional.empty());
         verifyNoMoreInteractions(mapper);
     }
 
@@ -513,7 +513,7 @@ class BusServiceTest {
         Page<BusResponseDto> dtoPage = new PageImpl<>(List.of(responseDto1, responseDto2));
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findAll(pageable)).thenReturn(busPage);
@@ -528,7 +528,7 @@ class BusServiceTest {
         assertEquals("bus-2", result.getContent().get(1).getId());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findAll(pageable);
         verify(mapper).toDto(bus1);
@@ -547,7 +547,7 @@ class BusServiceTest {
         Page<BusResponseDto> emptyDtoPage = new PageImpl<>(List.of());
 
         when(userRepository.findByEmailIgnoreCase("test@email.com")).thenReturn(Optional.of(admin));
-        when(userValidation.validateUserExists(Optional.of(admin), true)).thenReturn(admin);
+        when(userValidation.validateUserExists(Optional.of(admin))).thenReturn(admin);
         doNothing().when(userValidation).validateUserIs(admin, Role.ADMIN);
 
         when(repository.findAll(pageable)).thenReturn(emptyBusPage);
@@ -559,7 +559,7 @@ class BusServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         verify(userRepository).findByEmailIgnoreCase("test@email.com");
-        verify(userValidation).validateUserExists(Optional.of(admin), true);
+        verify(userValidation).validateUserExists(Optional.of(admin));
         verify(userValidation).validateUserIs(admin, Role.ADMIN);
         verify(repository).findAll(pageable);
     }
@@ -570,11 +570,11 @@ class BusServiceTest {
         var exception = new NotFoundException("not found");
 
         when(userRepository.findByEmailIgnoreCase("nonexistent@email.com")).thenReturn(Optional.empty());
-        when(userValidation.validateUserExists(Optional.empty(), true)).thenThrow(exception);
+        when(userValidation.validateUserExists(Optional.empty())).thenThrow(exception);
         assertThrows(NotFoundException.class, () -> service.getAllBuses(pageable, "nonexistent@email.com"), exception.getMessage());
 
         verify(userRepository).findByEmailIgnoreCase("nonexistent@email.com");
-        verify(userValidation).validateUserExists(Optional.empty(), true);
+        verify(userValidation).validateUserExists(Optional.empty());
         verifyNoMoreInteractions(userValidation, repository, mapper);
     }
 
@@ -587,13 +587,13 @@ class BusServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(userRepository.findByEmailIgnoreCase("driver@email.com")).thenReturn(Optional.of(driver));
-        when(userValidation.validateUserExists(Optional.of(driver), true)).thenReturn(driver);
+        when(userValidation.validateUserExists(Optional.of(driver))).thenReturn(driver);
         doThrow(new ForbiddenException("User is not admin")).when(userValidation).validateUserIs(driver, Role.ADMIN);
 
         assertThrows(ForbiddenException.class, () -> service.getAllBuses(pageable, "driver@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("driver@email.com");
-        verify(userValidation).validateUserExists(Optional.of(driver), true);
+        verify(userValidation).validateUserExists(Optional.of(driver));
         verify(userValidation).validateUserIs(driver, Role.ADMIN);
         verifyNoMoreInteractions(repository, mapper);
     }
@@ -606,12 +606,12 @@ class BusServiceTest {
         var exception = new NotFoundException("not found");
 
         when(userRepository.findByEmailIgnoreCase("nonexistent@email.com")).thenReturn(Optional.empty());
-        when(userValidation.validateUserExists(Optional.empty(), true)).thenThrow(exception);
+        when(userValidation.validateUserExists(Optional.empty())).thenThrow(exception);
 
         assertThrows(NotFoundException.class, () -> service.updateBus(request, "bus-1", "nonexistent@email.com"), exception.getMessage());
 
         verify(userRepository).findByEmailIgnoreCase("nonexistent@email.com");
-        verify(userValidation).validateUserExists(Optional.empty(), true);
+        verify(userValidation).validateUserExists(Optional.empty());
         verifyNoMoreInteractions(userValidation, repository, mapper);
     }
 
@@ -623,13 +623,13 @@ class BusServiceTest {
         driver.setRole(Role.DRIVER);
 
         when(userRepository.findByEmailIgnoreCase("driver@email.com")).thenReturn(Optional.of(driver));
-        when(userValidation.validateUserExists(Optional.of(driver), true)).thenReturn(driver);
+        when(userValidation.validateUserExists(Optional.of(driver))).thenReturn(driver);
         doThrow(new ForbiddenException("User is not admin")).when(userValidation).validateUserIs(driver, Role.ADMIN);
 
         assertThrows(ForbiddenException.class, () -> service.updateBus(request, "bus-1", "driver@email.com"));
 
         verify(userRepository).findByEmailIgnoreCase("driver@email.com");
-        verify(userValidation).validateUserExists(Optional.of(driver), true);
+        verify(userValidation).validateUserExists(Optional.of(driver));
         verify(userValidation).validateUserIs(driver, Role.ADMIN);
         verifyNoMoreInteractions(repository, mapper);
     }
